@@ -72,9 +72,17 @@ func NewLdapAuth(param_url *url.URL, logger *clog.CondLogger) (*LdapAuth, error)
 	return auth, nil
 }
 
-func (h *LdapAuth) Stop() {
-	h.stopOnce.Do(func() {
-		close(h.stopChan)
+func (l *LdapAuth) Stop() {
+	l.stopOnce.Do(func() {
+		close(l.stopChan)
+		for {
+			select {
+			case con := <-l.pool:
+				con.Close()
+			default:
+				return
+			}
+		}
 	})
 }
 
