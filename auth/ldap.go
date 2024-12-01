@@ -25,7 +25,6 @@ type LdapAuth struct {
 	bindPasswd   string
 	timeout      time.Duration
 	stopOnce     sync.Once
-	stopChan     chan struct{}
 	logger       *clog.CondLogger
 	pool         chan ldap.Client
 	hiddenDomain string
@@ -43,7 +42,6 @@ func NewLdapAuth(param_url *url.URL, logger *clog.CondLogger) (*LdapAuth, error)
 	auth := &LdapAuth{
 		url:          param_url,
 		timeout:      3 * time.Second,
-		stopChan:     make(chan struct{}),
 		logger:       logger,
 		hiddenDomain: strings.ToLower(values.Get("hidden_domain")),
 	}
@@ -74,7 +72,6 @@ func NewLdapAuth(param_url *url.URL, logger *clog.CondLogger) (*LdapAuth, error)
 
 func (l *LdapAuth) Stop() {
 	l.stopOnce.Do(func() {
-		close(l.stopChan)
 		for {
 			select {
 			case con := <-l.pool:
