@@ -29,6 +29,8 @@ func NewAuth(paramstr string, logger *clog.CondLogger) (Auth, error) {
 		return NewHMACAuth(url, logger)
 	case "cert":
 		return NewCertAuth(url, logger)
+	case "ldap", "ldaps":
+		return NewLdapAuth(url, logger)
 	case "none":
 		return NoAuth{}, nil
 	default:
