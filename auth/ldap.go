@@ -86,16 +86,6 @@ func (l *LdapAuth) Stop() {
 func (l *LdapAuth) cacheUser(login, password string, inLdap bool) {
 	cacheTTL := time.Duration(l.CacheTTL) * time.Second
 	if l.useCache {
-		var msg string
-		msg_cache := ", caching for %s"
-		if inLdap {
-			msg = "Add %q to Allow list"
-		} else {
-			msg = "Add %q to Deny list"
-		}
-		l.logger.Info(
-			fmt.Sprintf(msg+msg_cache, login, cacheTTL.String()),
-		)
 		go l.userCacheMap.add(login, password, inLdap, cacheTTL)
 	}
 }
