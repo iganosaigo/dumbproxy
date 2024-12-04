@@ -31,6 +31,8 @@ type LdapAuth struct {
 	useCache     bool
 	CacheTTL     int
 	userCacheMap *userCache
+	sessionMap   sync.Map
+	mu           sync.Mutex
 }
 
 func NewLdapAuth(param_url *url.URL, logger *clog.CondLogger) (*LdapAuth, error) {
@@ -92,6 +94,22 @@ func (l *LdapAuth) cacheUser(login, password string, inLdap bool) {
 
 func (l *LdapAuth) verifyLdapLoginAndPassword(login, password string,
 	wr http.ResponseWriter, req *http.Request) bool {
+
+	lock, _ := func() (interface{}, bool) {
+		l.mu.Lock()
+		defer l.mu.Unlock()
+		return l.sessionMap.LoadOrStore(login, &sync.Mutex{})
+	}()
+
+	session := lock.(*sync.Mutex)
+	session.Lock()
+
+	defer func() {
+		session.Unlock()
+		l.mu.Lock()
+		defer l.mu.Unlock()
+		l.sessionMap.Delete(login)
+	}()
 
 	if l.useCache {
 		if inCache, allowed := l.userCacheMap.get(login, password); inCache {
